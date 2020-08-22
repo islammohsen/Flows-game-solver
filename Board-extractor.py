@@ -63,11 +63,11 @@ def extract_cols(contours):
     thresh = 10
     ret = {}
     for cnt in contours:
-        x, _, _, _, = cv.boundingRect(cnt)
+        x, y, _, _, = cv.boundingRect(cnt)
         if x - x % thresh in ret:
-            ret[x - x % thresh].append(cnt)
+            ret[x - x % thresh][y] = cnt
         else:
-            ret[x - x % thresh] = [cnt]
+            ret[x - x % thresh] = {y: cnt}
     return ret
 
 
@@ -105,12 +105,7 @@ n = 0
 m = len(cols)
 for col in sorted(cols.keys()):
     n = len(cols[col])
-    print(col)
-    if idx == 2:
-        for cnt in cols[col]:
-            x, y, w, h = cv.boundingRect(cnt)
-            cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-    idx += 1
+    break
 
 print(n)
 print(m)
@@ -120,6 +115,15 @@ for _ in range(n):
     grid.append([])
     for _ in range(m):
         grid[-1].append(0)
+j = 0
+for col in sorted(cols.keys()):
+    i = 0
+    for row in sorted(cols[col].keys()):
+        for cnt in circles:
+            if bounding_inside(cols[col][row], cnt):
+                grid[i][j] = 1
+        i = i + 1
+    j = j + 1
 
 for row in grid:
     for col in row:
