@@ -29,6 +29,7 @@ def extract_board(contours):
     ret = []
     biggest = extract_biggest_bounding_box(contours)
     for cnt in contours:
+        _, _, w, h = cv.boundingRect(cnt)
         if bounding_inside(biggest, cnt):
             ret.append(cnt)
     return ret
@@ -42,17 +43,10 @@ def extract_board_properties(contours):
     for cnt in contours:
         inside = 0
         for cnt2 in contours:
-            if bounding_inside(cnt, cnt2):
-                inside = inside + 1
-        if inside == 2:
-            circles.append(cnt)
-
-    # extract cells : boxes that aren't circles or inside a circle
-    for cnt in contours:
-        inside = 0
-        for cnt2 in contours:
             if bounding_inside(cnt2, cnt):
-                inside += 1
+                inside = inside + 1
+        if inside == 3:
+            circles.append(cnt)
         if inside == 2:
             cells.append(cnt)
 
@@ -173,13 +167,13 @@ def solve_grid(grid, color):
 
 
 # read image
-img_path = 'example.jpg'
+img_path = 'example6.jpg'
 img = cv.imread(img_path)
 original = cv.imread(img_path)
 gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
 
 # edge detection
-edges = cv.Canny(gray, 50, 150)
+edges = cv.Canny(gray, 100, 150)
 kernel = np.ones((5, 5), np.uint8)
 edges = cv.dilate(edges, kernel, iterations=1)
 
@@ -190,6 +184,11 @@ contours, hierarchy = cv.findContours(
 # extract board
 contours = extract_board(contours)
 cells, circles = extract_board_properties(contours)
+
+# draw board
+# for cnt in contours:
+#     x, y, w, h = cv.boundingRect(cnt)
+#     cv.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
 # drawing cells
 # for cnt in cells:
