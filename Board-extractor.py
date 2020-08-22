@@ -114,12 +114,56 @@ def extract_grid(img, cells, circles):
         for col in row:
             print(col, end='')
         print()
-
+    print("###########")
     return n, m, grid
 
 
+dx = [1, -1, 0, 0]
+dy = [0, 0, 1, -1]
+
+
+def is_valid(x, y, grid):
+    return x >= 0 and x < len(grid) and y >= 0 and y < len(grid[0])
+
+
+def dfs(x, y, stx, sty, grid, color):
+    ret = False
+    for d in range(4):
+        nwx = x + dx[d]
+        nwy = y + dy[d]
+        if is_valid(nwx, nwy, grid):
+            if grid[nwx][nwy] == color and (nwx != stx or nwy != sty):
+                ret |= solve_grid(grid, color + 1)
+            if grid[nwx][nwy] == 0:
+                grid[nwx][nwy] = -color
+                ret |= dfs(nwx, nwy, stx, sty, grid, color)
+                grid[nwx][nwy] = 0
+        if ret:
+            break
+    return ret
+
+
+def solve_grid(grid, color):
+    stx = -1
+    sty = -1
+    for i in range(len(grid)):
+        for j in range(len(grid[0])):
+            if(grid[i][j] == color):
+                stx = i
+                sty = j
+                break
+    if stx == -1:
+        # printing
+        for row in grid:
+            for col in row:
+                print(abs(col), end='')
+            print()
+        return True
+    return dfs(stx, sty, stx, sty, grid, color)
+
+
 # read image
-img = cv.imread('example.jpg')
+img = cv.imread('example3.jpg')
 gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
 
 # edge detection
@@ -136,18 +180,20 @@ contours = extract_board(contours)
 cells, circles = extract_board_properties(contours)
 
 # drawing cells
-# for cnt in cells:
-#     x, y, w, h = cv.boundingRect(cnt)
-#     cv.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+for cnt in cells:
+    x, y, w, h = cv.boundingRect(cnt)
+    cv.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
 # drawing circles
-# for cnt in circles:
-#     x, y, w, h = cv.boundingRect(cnt)
-#     cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+for cnt in circles:
+    x, y, w, h = cv.boundingRect(cnt)
+    cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
 # construct grid
 n, m, grid = extract_grid(img, cells, circles)
 
+solve_grid(grid, 1)
+
 # ploting
-# plt.imshow(img)
-# plt.show()
+plt.imshow(img)
+plt.show()
