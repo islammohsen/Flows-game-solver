@@ -71,6 +71,41 @@ def extract_cols(contours):
     return ret
 
 
+def extract_grid(cells, circles):
+    # extract cols
+    cols = extract_cols(cells)
+
+    # compute #rows, #cols
+    n = len(cols[list(cols.keys())[0]])
+    m = len(cols)
+
+    # init grid
+    grid = []
+    for _ in range(n):
+        grid.append([])
+        for _ in range(m):
+            grid[-1].append(0)
+
+    # detect cells containing circles
+    j = 0
+    for col in sorted(cols.keys()):
+        i = 0
+        for row in sorted(cols[col].keys()):
+            for cnt in circles:
+                if bounding_inside(cols[col][row], cnt):
+                    grid[i][j] = 1
+            i = i + 1
+        j = j + 1
+
+    # printing
+    for row in grid:
+        for col in row:
+            print(col, end='')
+        print()
+
+    return n, m, grid
+
+
 # read image
 img = cv.imread('example.jpg')
 gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
@@ -87,7 +122,6 @@ contours, hierarchy = cv.findContours(
 # extract board
 contours = extract_board(contours)
 cells, circles = extract_board_properties(contours)
-print(len(contours))
 
 # drawing cells
 # for cnt in cells:
@@ -99,37 +133,8 @@ print(len(contours))
 #     x, y, w, h = cv.boundingRect(cnt)
 #     cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-cols = extract_cols(cells)
-idx = 0
-n = 0
-m = len(cols)
-for col in sorted(cols.keys()):
-    n = len(cols[col])
-    break
-
-print(n)
-print(m)
-
-grid = []
-for _ in range(n):
-    grid.append([])
-    for _ in range(m):
-        grid[-1].append(0)
-j = 0
-for col in sorted(cols.keys()):
-    i = 0
-    for row in sorted(cols[col].keys()):
-        for cnt in circles:
-            if bounding_inside(cols[col][row], cnt):
-                grid[i][j] = 1
-        i = i + 1
-    j = j + 1
-
-for row in grid:
-    for col in row:
-        print(col, end='')
-    print()
+n, m, grid = extract_grid(cells, circles)
 
 # ploting
-plt.imshow(img)
-plt.show()
+# plt.imshow(img)
+# plt.show()
