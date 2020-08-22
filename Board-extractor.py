@@ -71,7 +71,7 @@ def extract_cols(contours):
     return ret
 
 
-def extract_grid(cells, circles):
+def extract_grid(img, cells, circles):
     # extract cols
     cols = extract_cols(cells)
 
@@ -81,22 +81,34 @@ def extract_grid(cells, circles):
 
     # init grid
     grid = []
+    grid_cnt = []
     for _ in range(n):
         grid.append([])
+        grid_cnt.append([])
         for _ in range(m):
             grid[-1].append(0)
+            grid_cnt[-1].append(None)
 
-    # detect cells containing circles
     j = 0
     for col in sorted(cols.keys()):
         i = 0
         for row in sorted(cols[col].keys()):
-            for cnt in circles:
-                if bounding_inside(cols[col][row], cnt):
-                    grid[i][j] = 1
+            grid_cnt[i][j] = cols[col][row]
             i = i + 1
         j = j + 1
 
+    # detect cells containing circles
+    colors_mapping = {}
+    for i in range(n):
+        for j in range(m):
+            for cnt in circles:
+                if bounding_inside(grid_cnt[i][j], cnt):
+                    x, y, w, h = cv.boundingRect(grid_cnt[i][j])
+                    color = repr(img[y + h // 2, x + w // 2])
+                    if (color in colors_mapping) == False:
+                        colors_mapping[color] = len(colors_mapping) + 1
+                    grid[i][j] = colors_mapping[color]
+                    break
     # printing
     for row in grid:
         for col in row:
@@ -133,7 +145,8 @@ cells, circles = extract_board_properties(contours)
 #     x, y, w, h = cv.boundingRect(cnt)
 #     cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-n, m, grid = extract_grid(cells, circles)
+# construct grid
+n, m, grid = extract_grid(img, cells, circles)
 
 # ploting
 # plt.imshow(img)
