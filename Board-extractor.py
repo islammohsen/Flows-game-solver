@@ -99,6 +99,7 @@ def extract_grid(img, cells, circles):
 
     # detect cells containing circles
     colors_mapping = {}
+    inv_colors_mapping = {}
     for i in range(n):
         for j in range(m):
             for cnt in circles:
@@ -107,15 +108,27 @@ def extract_grid(img, cells, circles):
                     color = repr(img[y + h // 2, x + w // 2])
                     if (color in colors_mapping) == False:
                         colors_mapping[color] = len(colors_mapping) + 1
+                        inv_colors_mapping[colors_mapping[color]
+                                           ] = img[y + h // 2, x + w // 2]
                     grid[i][j] = colors_mapping[color]
                     break
     # printing
-    for row in grid:
-        for col in row:
-            print(col, end='')
-        print()
-    print("###########")
-    return n, m, grid
+    # for row in grid:
+    #     for col in row:
+    #         print(col, end='')
+    #     print()
+    # print("###########")
+    return n, m, grid, grid_cnt, inv_colors_mapping
+
+
+def color_image(img, grid, grid_cnt, inv_colors_mapping):
+    for i in range(len(grid)):
+        for j in range(len(grid[i])):
+            x, y, w, h = cv.boundingRect(grid_cnt[i][j])
+            # print(' ' + inv_colors_mapping[grid[i][j]] + ' ', end='')
+            color = (int(inv_colors_mapping[grid[i][j]][0]),
+                     int(inv_colors_mapping[grid[i][j]][1]), int(inv_colors_mapping[grid[i][j]][2]))
+            cv.rectangle(img, (x, y), (x+w, y+h), color, -1)
 
 
 dx = [1, -1, 0, 0]
@@ -127,20 +140,18 @@ def is_valid(x, y, grid):
 
 
 def dfs(x, y, stx, sty, grid, color):
-    ret = False
     for d in range(4):
         nwx = x + dx[d]
         nwy = y + dy[d]
         if is_valid(nwx, nwy, grid):
-            if grid[nwx][nwy] == color and (nwx != stx or nwy != sty):
-                ret |= solve_grid(grid, color + 1)
+            if grid[nwx][nwy] == color and (nwx != stx or nwy != sty) and solve_grid(grid, color + 1):
+                return True
             if grid[nwx][nwy] == 0:
                 grid[nwx][nwy] = -color
-                ret |= dfs(nwx, nwy, stx, sty, grid, color)
+                if dfs(nwx, nwy, stx, sty, grid, color):
+                    return True
                 grid[nwx][nwy] = 0
-        if ret:
-            break
-    return ret
+    return False
 
 
 def solve_grid(grid, color):
@@ -154,16 +165,17 @@ def solve_grid(grid, color):
                 break
     if stx == -1:
         # printing
-        for row in grid:
-            for col in row:
-                print(abs(col), end='')
-            print()
-        return True
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                grid[i][j] = abs(grid[i][j])
+        return grid
     return dfs(stx, sty, stx, sty, grid, color)
 
 
 # read image
-img = cv.imread('example3.jpg')
+img_path = 'example.jpg'
+img = cv.imread(img_path)
+original = cv.imread(img_path)
 gray = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
 
 # edge detection
@@ -180,20 +192,23 @@ contours = extract_board(contours)
 cells, circles = extract_board_properties(contours)
 
 # drawing cells
-for cnt in cells:
-    x, y, w, h = cv.boundingRect(cnt)
-    cv.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+# for cnt in cells:
+#     x, y, w, h = cv.boundingRect(cnt)
+#     cv.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
 # drawing circles
-for cnt in circles:
-    x, y, w, h = cv.boundingRect(cnt)
-    cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+# for cnt in circles:
+#     x, y, w, h = cv.boundingRect(cnt)
+#     cv.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
 # construct grid
-n, m, grid = extract_grid(img, cells, circles)
+n, m, grid, grid_cnt, inv_colors_mapping = extract_grid(img, cells, circles)
 
 solve_grid(grid, 1)
+color_image(img, grid, grid_cnt, inv_colors_mapping)
 
 # ploting
-plt.imshow(img)
+f, axarr = plt.subplots(1, 2)
+axarr[0].imshow(original)
+axarr[1].imshow(img)
 plt.show()
